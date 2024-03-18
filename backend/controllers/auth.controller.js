@@ -1,47 +1,36 @@
 import User from "../models/user.model.js"
 import bcryptjs from "bcryptjs"
 import generateTokenAndSetCookie from "../utils/generateToken.js";
+const login = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
 
-const login = async(req,res)=>{
-    try{
-        const {username,password} = req.body;
-        const user = await User.findOne({username});
-        //ab hme user milgya iske password ko compare krlo
-        
-        console.log(password);
-        const isPasswordCorrect =  bcryptjs.compare(password,user?.password);
-        res.status(isPasswordCorrect)
-        console.log(isPasswordCorrect)
-        if(!user||!isPasswordCorrect) return res.status(400).json({error:"Invalid password or username"});
+        if (!user) {
+            return res.status(400).json({ error: "User not found" });
+        }
 
-        generateTokenAndSetCookie(user._id,res);
+        const isPasswordCorrect = await bcryptjs.compare(password, user.password);
 
-       return res.status(200).json({
-            _id:user._id,
-            fullName:user.fullName,
-            username:user.username,
-            profilePic:user.profilePic,
-            gender:user.gender
-        })
+        if (!isPasswordCorrect) {
+            return res.status(400).json({ error: "Invalid password" });
+        }
 
+        // If the password is correct, proceed with generating token and setting cookie
+        generateTokenAndSetCookie(user._id, res);
 
-     
-
-        // const isPasswordCorrect = await bcryptjs.compare(password,user?.password||"");
-        // if(!user||!isPasswordCorrect){
-        //     return res.status(401).json({error:"Invalid Credentials"});
-        // }
-        
-        // generateTokenAndSetCookie(user._id,username);
-
-
-    }
-    catch(error){
-        console.log("Error in signup controller: " + error);
-        res.status(500).json({error:'Internal Server Error'});
+        return res.status(200).json({
+            _id: user._id,
+            fullName: user.fullName,
+            username: user.username,
+            profilePic: user.profilePic,
+            gender: user.gender
+        });
+    } catch (error) {
+        console.error("Error in login controller:", error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 }
-
 // auth.js
 const signup = async (req, res)=>{
    try{
@@ -75,7 +64,7 @@ const hashedPassword = await bcryptjs.hash(password,salt);
             generateTokenAndSetCookie(newUser._id,res);
 
             await newUser.save();
-            return res.status(201).json({_id:newUser._id,fullName:newUser.fullName,username:newUser.username,
+        res.status(201).json({_id:newUser._id,fullName:newUser.fullName,username:newUser.username,
                 profilePic:newUser.profilePic,gender:newUser.gender});
     
     
